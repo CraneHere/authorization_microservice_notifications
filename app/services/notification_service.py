@@ -1,26 +1,28 @@
-import requests
+from telegram import Bot
+import os
+from dotenv import load_dotenv
 
-TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN'
-TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID'
-
-def send_telegram_message(message: str):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        'chat_id': 'TELEGRAM_CHAT_ID',
-        'text': message
-    }
-    response = requests.post(url, data=payload)
-    return response.json()
+from app.config import get_bot_creds
+conf = get_bot_creds()
 
 
-def send_welcome_email(email: str):
-    print(f"Sending welcome email to {email}")
+async def send_telegram_message(message: str):
+    token = conf["TOKEN"]
+    chat_id = conf["ID"]
+    print(token, chat_id)
+
+    if not token or not chat_id:
+        raise ValueError("Telegram bot token or chat ID is not set.")
+
+    bot = Bot(token=token)
+
+    await bot.send_message(chat_id=chat_id, text=message)
 
 
-def handle_user_registered_event(event: dict):
+
+async def handle_user_registered_event(event: dict):
     if event['eventType'] == 'UserRegistered':
-        send_welcome_email(event['email'])
 
-        username = event.get('username', 'User')
-        welcome_message = f"Привет, {username}! Добро пожаловать в наш чат!"
-        send_telegram_message(welcome_message)
+
+        telegram_message = f"Новый пользователь зарегистрирован: {event['email']}"
+        await send_telegram_message(telegram_message)
